@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - stg
-      - production
     types:
       - opened
       - synchronize
