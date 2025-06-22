@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - 'release/**'
-      - 'epic/**'
-      - 'stg'
 
 jobs:
   auto-merge-to-dev:
