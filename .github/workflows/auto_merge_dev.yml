@@ -1,0 +1,35 @@
+name: Auto Merge to Dev
+
+on:
+  push:
+    branches:
+      - 'release/**'
+      - 'epic/**'
+      - 'stg'
+
+jobs:
+  auto-merge-to-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine source and target
+        id: branch-check
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "source=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "target=dev" >> $GITHUB_OUTPUT
+
+      - name: Merge to dev
+        run: |
+          git fetch origin
+          git checkout ${{ steps.branch-check.outputs.target }}
+          git merge origin/${{ steps.branch-check.outputs.source }} --no-edit || echo "No changes to merge"
+          git push origin ${{ steps.branch-check.outputs.target }}

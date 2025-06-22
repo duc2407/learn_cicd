@@ -1,0 +1,50 @@
+name: release → stg/production
+
+on:
+  pull_request:
+    branches:
+      - stg
+      - production
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  check-release-pr:
+    if: startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.1'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Check merge conflict (dry-run)
+        id: conflict-check
+        run: |
+          TARGET_BRANCH="${{ github.base_ref }}"
+          git fetch origin $TARGET_BRANCH
+          git merge --no-commit --no-ff origin/$TARGET_BRANCH || echo "conflict" > conflict.txt
+
+          if [ -f conflict.txt ]; then
+            echo "::error ::Merge conflict detected with $TARGET_BRANCH"
+            exit 1
+          fi
+
+      - name: All checks passed ✅
+        if: success()
+        run: echo "PR from release/* to ${{ github.base_ref }} passed all checks."

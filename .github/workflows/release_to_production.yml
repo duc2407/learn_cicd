@@ -1,0 +1,47 @@
+name: release → production
+
+on:
+  pull_request:
+    branches:
+      - production
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  check-release-pr:
+    if: startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.1'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Analyzer
+        run: flutter analyze
+
+      - name: Run Tests
+        run: flutter test
+
+      - name: Check Merge Conflicts
+        id: conflict-check
+        run: |
+          git fetch origin production
+          git merge --no-commit --no-ff origin/production || echo "conflict" > conflict.txt
+          if [ -f conflict.txt ]; then
+            echo "Merge conflict detected"
+            exit 1
+          fi
+
+      - name: PR Passed ✅
+        if: success()
+        run: echo "No conflicts. Tests passed. Good to go!"

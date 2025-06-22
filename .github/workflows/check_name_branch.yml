@@ -1,0 +1,30 @@
+name: Check PR Branch Naming
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check naming rules
+        run: |
+          SRC="${{ github.head_ref }}"
+          DEST="${{ github.base_ref }}"
+
+          echo "Source: $SRC"
+          echo "Target: $DEST"
+
+          if [[ "$DEST" == epic/* && ! "$SRC" =~ ^task\/.+ ]]; then
+            echo "::error ::PR into 'epic/...' must come from 'task/...'"
+            exit 1
+          fi
+
+          if [[ "$DEST" == release/* && ! "$SRC" =~ ^epic\/.+ ]]; then
+            echo "::error ::PR into 'release/...' must come from 'epic/...'"
+            exit 1
+          fi
+
+          echo "✅ Branch name is valid."
